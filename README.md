@@ -56,8 +56,6 @@ npx wrangler deploy
 
 <br>
 
-![](https://img.shields.io/badge/⚡_HEURISTIC_EVAL-LAYER_ACTIVE-00ff88?style=for-the-badge&labelColor=0d1117)
-
 ![](https://img.shields.io/badge/%F0%9F%94%AD_OBSERVABILITY-ALL_SIGNALS_NOMINAL-blueviolet?style=for-the-badge&labelColor=1a1a2e)
 ---
 

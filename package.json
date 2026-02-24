@@ -1,0 +1,27 @@
+{
+  "name": "cert-support-agent",
+  "version": "1.0.0",
+  "description": "An Autonomous Order & Inventory Intelligence Agent built on Cloudflare Workers AI",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "ai",
+    "llm",
+    "d1"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.22.0"
+  },
+  "dependencies": {
+    "@cloudflare/ai": "^1.0.0"
+  }
+}

@@ -1,0 +1,14 @@
+name = "cert-support-agent"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Binding for Cloudflare Workers AI
+[ai]
+binding = "AI"
+
+# Binding for Cloudflare D1 Database
+# Replace 'your-database-id-here' with the actual database_id from 'wrangler d1 create cert-support-db'
+[[d1_databases]]
+binding = "DB"
+database_name = "cert-support-db"
+database_id = "your-database-id-here"

@@ -23,7 +23,7 @@ jobs:
         run: |
           echo "Validating schema.sql..."
           sqlite3 :memory: < src/schema.sql
-          echo "✅ schema.sql is valid SQLite syntax"
+          echo "â schema.sql is valid SQLite syntax"
 
       - name: Find and validate all SQL files
         run: |
@@ -43,9 +43,9 @@ jobs:
           for file in $SQL_FILES; do
             echo "Validating $file..."
             if sqlite3 :memory: < "$file" 2>&1; then
-              echo "✅ $file is valid"
+              echo "â $file is valid"
             else
-              echo "❌ $file has syntax errors"
+              echo "â $file has syntax errors"
               EXIT_CODE=1
             fi
             echo ""
@@ -72,7 +72,7 @@ jobs:
           echo "Checking for real email addresses..."
           REAL_EMAILS=$(git diff origin/${{ github.base_ref }}...HEAD | grep -E "^\+" | grep -iE "[a-z0-9._%+-]+@(?!example\.com|example\.org|test\.com|localhost|domain\.com)[a-z0-9.-]+\.[a-z]{2,}" || true)
           if [ -n "$REAL_EMAILS" ]; then
-            echo "⚠️  Warning: Potential real email addresses detected:"
+            echo "â ï¸  Warning: Potential real email addresses detected:"
             echo "$REAL_EMAILS"
             echo ""
             echo "Please ensure these are not real user emails. Use example.com or similar domains for test data."
@@ -86,7 +86,7 @@ jobs:
           # Then filter out common false positives (test numbers, tracking numbers)
           PHONE_NUMBERS=$(echo "$PHONE_CANDIDATES" | grep -vE "(000-000-0000|111-111-1111|123-456-7890|555-[0-9]{3}-[0-9]{4}|tracking|1Z[A-Z0-9]+|9[0-9]{21}|7[0-9]{14})" || true)
           if [ -n "$PHONE_NUMBERS" ]; then
-            echo "⚠️  Warning: Potential phone numbers detected:"
+            echo "â ï¸  Warning: Potential phone numbers detected:"
             echo "$PHONE_NUMBERS"
             echo ""
             echo "Please ensure these are not real phone numbers."
@@ -97,7 +97,7 @@ jobs:
           echo "Checking for SSNs..."
           SSN_PATTERNS=$(git diff origin/${{ github.base_ref }}...HEAD | grep -E "^\+" | grep -E "[0-9]{3}-[0-9]{2}-[0-9]{4}" | grep -vE "(000-00-0000|123-45-6789)" || true)
           if [ -n "$SSN_PATTERNS" ]; then
-            echo "⚠️  Warning: Potential SSN patterns detected:"
+            echo "â ï¸  Warning: Potential SSN patterns detected:"
             echo "$SSN_PATTERNS"
             echo ""
             echo "Please ensure these are not real SSNs."
@@ -108,7 +108,7 @@ jobs:
           echo "Checking for credit card patterns..."
           CC_PATTERNS=$(git diff origin/${{ github.base_ref }}...HEAD | grep -E "^\+" | grep -E "[0-9]{4}[- ]?[0-9]{4}[- ]?[0-9]{4}[- ]?[0-9]{4}" | grep -vE "(0000-0000-0000-0000|1111-1111-1111-1111|1234-5678-9012-3456)" || true)
           if [ -n "$CC_PATTERNS" ]; then
-            echo "⚠️  Warning: Potential credit card patterns detected:"
+            echo "â ï¸  Warning: Potential credit card patterns detected:"
             echo "$CC_PATTERNS"
             echo ""
             echo "Please ensure these are not real credit card numbers."
@@ -117,20 +117,20 @@ jobs:
           
           # Check for AWS keys
           echo "Checking for AWS keys..."
-          AWS_KEYS=$(git diff origin/${{ github.base_ref }}...HEAD | grep -E "^\+" | grep -iE "(AKIA[0-9A-Z]{16}|aws_access_key_id|aws_secret_access_key)" || true)
-          if [ -n "$AWS_KEYS" ]; then
-            echo "❌ ERROR: Potential AWS keys detected:"
-            echo "$AWS_KEYS"
+          AWS_KEY_CANDIDATES=$(git diff origin/${{ github.base_ref }}...HEAD | grep -E "^\+" | grep -iE "(AKIA[0-9A-Z]{16}|aws_access_key_id|aws_secret_access_key)" | grep -v "grep " || true)
+          if [ -n "$AWS_KEY_CANDIDATES" ]; then
+            echo "❌ ERROR: Potential real AWS keys detected:"
+            echo "$AWS_KEY_CANDIDATES"
             echo ""
             EXIT_CODE=1
           fi
           
           # Check for private keys
           echo "Checking for private keys..."
-          PRIVATE_KEYS=$(git diff origin/${{ github.base_ref }}...HEAD | grep -E "^\+" | grep -iE "(BEGIN.*PRIVATE KEY|BEGIN RSA PRIVATE KEY)" || true)
-          if [ -n "$PRIVATE_KEYS" ]; then
-            echo "❌ ERROR: Potential private keys detected:"
-            echo "$PRIVATE_KEYS"
+          PRIVATE_KEY_CANDIDATES=$(git diff origin/${{ github.base_ref }}...HEAD | grep -E "^\+" | grep -iE "(BEGIN.*PRIVATE KEY|BEGIN RSA PRIVATE KEY)" | grep -v "grep " || true)
+          if [ -n "$PRIVATE_KEY_CANDIDATES" ]; then
+            echo "❌ ERROR: Potential real private keys detected:"
+            echo "$PRIVATE_KEY_CANDIDATES"
             echo ""
             EXIT_CODE=1
           fi
@@ -149,7 +149,7 @@ jobs:
             
             # Report test patterns as informational (non-failing)
             if [ -n "$TEST_SECRETS" ]; then
-              echo "ℹ️  Info: Test/demo secret patterns detected (expected in test scenarios):"
+              echo "â¹ï¸  Info: Test/demo secret patterns detected (expected in test scenarios):"
               echo "$TEST_SECRETS"
               echo ""
               echo "These are test patterns and won't fail the workflow, but be aware they exist."
@@ -158,7 +158,7 @@ jobs:
             
             # Report real API tokens as errors (failing)
             if [ -n "$API_TOKENS" ]; then
-              echo "⚠️  Warning: Potential real API keys or tokens detected:"
+              echo "â ï¸  Warning: Potential real API keys or tokens detected:"
               echo "$API_TOKENS"
               echo ""
               echo "Please ensure these are not real API keys. Use environment variables or placeholder values."
@@ -168,13 +168,13 @@ jobs:
           
           if [ $EXIT_CODE -eq 0 ]; then
             if [ $TEST_PATTERNS_FOUND -eq 1 ]; then
-              echo "✅ No real sensitive data detected (test patterns flagged above for awareness)"
+              echo "â No real sensitive data detected (test patterns flagged above for awareness)"
             else
-              echo "✅ No sensitive data patterns detected"
+              echo "â No sensitive data patterns detected"
             fi
           else
             echo ""
-            echo "❌ Sensitive data check failed. Please review the warnings above."
+            echo "â Sensitive data check failed. Please review the warnings above."
           fi
           
           exit $EXIT_CODE
@@ -200,9 +200,9 @@ jobs:
           
           for file in "${REQUIRED_FILES[@]}"; do
             if [ -f "$file" ]; then
-              echo "✅ $file exists"
+              echo "â $file exists"
             else
-              echo "❌ $file is missing"
+              echo "â $file is missing"
               EXIT_CODE=1
             fi
           done
@@ -217,7 +217,7 @@ jobs:
           # Check for backup files
           BACKUP_FILES=$(find . -type f \( -name "*.bak" -o -name "*.backup" -o -name "*~" \) -not -path "./node_modules/*" -not -path "./.git/*" || true)
           if [ -n "$BACKUP_FILES" ]; then
-            echo "⚠️  Warning: Backup files detected:"
+            echo "â ï¸  Warning: Backup files detected:"
             echo "$BACKUP_FILES"
             echo ""
             EXIT_CODE=1
@@ -226,7 +226,7 @@ jobs:
           # Check for .env files (except .env.example)
           ENV_FILES=$(find . -type f -name ".env" -not -name ".env.example" -not -path "./node_modules/*" -not -path "./.git/*" || true)
           if [ -n "$ENV_FILES" ]; then
-            echo "❌ ERROR: .env files detected (should be in .gitignore):"
+            echo "â ERROR: .env files detected (should be in .gitignore):"
             echo "$ENV_FILES"
             echo ""
             EXIT_CODE=1
@@ -235,7 +235,7 @@ jobs:
           # Check for database files
           DB_FILES=$(find . -type f \( -name "*.db" -o -name "*.sqlite" -o -name "*.sqlite3" \) -not -path "./node_modules/*" -not -path "./.git/*" || true)
           if [ -n "$DB_FILES" ]; then
-            echo "⚠️  Warning: Database files detected:"
+            echo "â ï¸  Warning: Database files detected:"
             echo "$DB_FILES"
             echo ""
             echo "Please ensure these are test databases and not production data."
@@ -243,7 +243,7 @@ jobs:
           fi
           
           if [ $EXIT_CODE -eq 0 ]; then
-            echo "✅ No suspicious files detected"
+            echo "â No suspicious files detected"
           else
             echo ""
             echo "Please review the warnings above and ensure no sensitive files are committed."
@@ -259,12 +259,12 @@ jobs:
           EXECUTABLE_FILES=$(find . -type f -executable -not -path "./.git/*" -not -path "./node_modules/*" || true)
           
           if [ -n "$EXECUTABLE_FILES" ]; then
-            echo "⚠️  Warning: Executable files detected:"
+            echo "â ï¸  Warning: Executable files detected:"
             echo "$EXECUTABLE_FILES"
             echo ""
             echo "Please review if these files should have execute permissions."
           else
-            echo "✅ No unexpected executable files found"
+            echo "â No unexpected executable files found"
           fi
 
   security-scan:

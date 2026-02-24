@@ -77,7 +77,10 @@ jobs:
           
           # Check for phone numbers in various formats
           echo "Checking for phone numbers..."
-          PHONE_NUMBERS=$(git diff origin/${{ github.base_ref }}...HEAD | grep -E "^\+" | grep -E "(\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}|[0-9]{3}-[0-9]{3}-[0-9]{4}|[0-9]{10}" | grep -vE "(000-000-0000|111-111-1111|123-456-7890|555-[0-9]{3}-[0-9]{4}|tracking|1Z[A-Z0-9]+|9[0-9]{21}|7[0-9]{14})" || true)
+          # First detect phone number patterns
+          PHONE_CANDIDATES=$(git diff origin/${{ github.base_ref }}...HEAD | grep -E "^\+" | grep -E "(\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}|[0-9]{3}-[0-9]{3}-[0-9]{4}|[0-9]{10}" || true)
+          # Then filter out common false positives (test numbers, tracking numbers)
+          PHONE_NUMBERS=$(echo "$PHONE_CANDIDATES" | grep -vE "(000-000-0000|111-111-1111|123-456-7890|555-[0-9]{3}-[0-9]{4}|tracking|1Z[A-Z0-9]+|9[0-9]{21}|7[0-9]{14})" || true)
           if [ -n "$PHONE_NUMBERS" ]; then
             echo "⚠️  Warning: Potential phone numbers detected:"
             echo "$PHONE_NUMBERS"
@@ -130,7 +133,10 @@ jobs:
           
           # Check for API tokens and secrets
           echo "Checking for API tokens..."
-          API_TOKENS=$(git diff origin/${{ github.base_ref }}...HEAD | grep -E "^\+" | grep -iE "(api[_-]?key|api[_-]?token|api[_-]?secret|access[_-]?token|auth[_-]?token)['\"]?\s*[:=]\s*['\"]?[a-z0-9]{20,}" | grep -viE "(example|test|demo|placeholder|YOUR_API_KEY|<|>)" || true)
+          # Detect common API key/token patterns with assignments
+          API_CANDIDATES=$(git diff origin/${{ github.base_ref }}...HEAD | grep -E "^\+" | grep -iE "(api[_-]?key|api[_-]?token|api[_-]?secret|access[_-]?token|auth[_-]?token)['\"]?\s*[:=]\s*['\"]?[a-z0-9]{20,}" || true)
+          # Filter out common test/placeholder values
+          API_TOKENS=$(echo "$API_CANDIDATES" | grep -viE "(example|test|demo|placeholder|YOUR_API_KEY|<|>)" || true)
           if [ -n "$API_TOKENS" ]; then
             echo "⚠️  Warning: Potential API keys or tokens detected:"
             echo "$API_TOKENS"
@@ -249,7 +255,7 @@ jobs:
           scan-type: 'fs'
           scan-ref: '.'
           format: 'table'
-          exit-code: '0'
+          exit-code: '1'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 

@@ -40,6 +40,14 @@ git clone https://github.com/YOUR_USERNAME/cert-support-agent
 # Install dependencies
 npm install
 
+# Create a D1 database
+npx wrangler d1 create cert-support-db
+
+# Update wrangler.toml with the database_id from the previous command
+
+# Create the orders table
+npx wrangler d1 execute cert-support-db --command "CREATE TABLE orders (order_id TEXT PRIMARY KEY, status TEXT, tracking_number TEXT)"
+
 # Deploy to Cloudflare
 npx wrangler deploy
 ```

@@ -5,11 +5,16 @@
  * - Cloudflare Workers AI (Llama-3-8b-instruct)
  * - Cloudflare D1 (SQLite database)
  * - Router-Controller pattern for intent classification
+ * 
+ * Architecture: Route → Execute → Synthesize
+ * - Route: Extract Order ID from user query (CERT-XXXXXX format)
+ * - Execute: Query D1 database using parameterized queries for security
+ * - Synthesize: Generate AI response with real order data (RAG pattern)
  */
 
 // Type definitions for Cloudflare Worker environment
 export interface Env {
-  AI: any; // Cloudflare Workers AI binding
+  AI: Ai; // Cloudflare Workers AI binding
   DB: D1Database; // Cloudflare D1 database binding
 }
 
@@ -28,14 +33,6 @@ function extractOrderId(query: string): string | null {
   const orderIdPattern = /CERT-\d{6}/i;
   const match = query.match(orderIdPattern);
   return match ? match[0].toUpperCase() : null;
-}
-
-/**
- * Sanitize user input to prevent SQL injection
- */
-function sanitizeInput(input: string): string {
-  // Remove any potentially dangerous SQL characters
-  return input.replace(/[;'"\\]/g, '');
 }
 
 /**
@@ -58,7 +55,7 @@ async function getOrderFromDB(db: D1Database, orderId: string): Promise<Order | 
 /**
  * Use AI to generate a friendly response based on order data
  */
-async function generateAIResponse(ai: any, query: string, orderData: Order | null): Promise<string> {
+async function generateAIResponse(ai: Ai, query: string, orderData: Order | null): Promise<string> {
   let prompt: string;
   
   if (orderData) {
@@ -122,21 +119,18 @@ export default {
         );
       }
 
-      // Step 1: Sanitize input
-      const sanitizedQuery = sanitizeInput(body.query);
-
-      // Step 2: Route - Check if query contains an Order ID
-      const orderId = extractOrderId(sanitizedQuery);
+      // Step 1: Route - Check if query contains an Order ID
+      const orderId = extractOrderId(body.query);
 
       let orderData: Order | null = null;
 
-      // Step 3: Execute - If Order ID found, query D1 database
+      // Step 2: Execute - If Order ID found, query D1 database
       if (orderId) {
         orderData = await getOrderFromDB(env.DB, orderId);
       }
 
-      // Step 4: Synthesize - Generate AI response
-      const aiResponse = await generateAIResponse(env.AI, sanitizedQuery, orderData);
+      // Step 3: Synthesize - Generate AI response
+      const aiResponse = await generateAIResponse(env.AI, body.query, orderData);
 
       // Return the response
       return new Response(

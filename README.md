@@ -24,11 +24,9 @@ Edge-Native: Deployed globally with sub-50ms cold starts, providing instant supp
 #### [arch::router-controller] Architecture Logic
 The agent follows a Router-Controller pattern:
 
-Sanitize: User input is cleaned and checked for SQL injection.
-
 Route: The LLM identifies if the user is asking about an order (CERT-XXXXXX).
 
-Execute: If an ID is present, the Worker performs a SELECT on the D1 instance.
+Execute: If an ID is present, the Worker performs a SELECT on the D1 instance using parameterized queries for security.
 
 Synthesize: The raw DB data is fed back to the LLM to generate a human-friendly response.
 

@@ -66,6 +66,7 @@ jobs:
         run: |
           echo "Checking for sensitive data patterns..."
           EXIT_CODE=0
+          TEST_PATTERNS_FOUND=0
           
           # Check for real email addresses (excluding example domains)
           echo "Checking for real email addresses..."
@@ -135,21 +136,42 @@ jobs:
           fi
           
           # Check for API tokens and secrets
-          echo "Checking for API tokens..."
+          echo "Checking for API tokens and secrets..."
           # Detect common API key/token patterns with assignments
           API_CANDIDATES=$(git diff origin/${{ github.base_ref }}...HEAD | grep -E "^\+" | grep -iE "(api[_-]?key|api[_-]?token|api[_-]?secret|access[_-]?token|auth[_-]?token)['\"]?\s*[:=]\s*['\"]?[a-z0-9]{20,}" || true)
-          # Filter out common test/placeholder values
-          API_TOKENS=$(echo "$API_CANDIDATES" | grep -viE "(example|test|demo|placeholder|YOUR_API_KEY|<|>)" || true)
-          if [ -n "$API_TOKENS" ]; then
-            echo "⚠️  Warning: Potential API keys or tokens detected:"
-            echo "$API_TOKENS"
-            echo ""
-            echo "Please ensure these are not real API keys. Use environment variables or placeholder values."
-            EXIT_CODE=1
+          
+          # Separate test patterns from real secrets
+          if [ -n "$API_CANDIDATES" ]; then
+            # First, check for test/demo patterns
+            TEST_SECRETS=$(echo "$API_CANDIDATES" | grep -iE "(example|test|demo|placeholder|YOUR_API_KEY|mock|fake|sample|dummy|<|>)" || true)
+            # Then filter out test patterns to find real secrets
+            API_TOKENS=$(echo "$API_CANDIDATES" | grep -viE "(example|test|demo|placeholder|YOUR_API_KEY|mock|fake|sample|dummy|<|>)" || true)
+            
+            # Report test patterns as informational (non-failing)
+            if [ -n "$TEST_SECRETS" ]; then
+              echo "ℹ️  Info: Test/demo secret patterns detected (expected in test scenarios):"
+              echo "$TEST_SECRETS"
+              echo ""
+              echo "These are test patterns and won't fail the workflow, but be aware they exist."
+              TEST_PATTERNS_FOUND=1
+            fi
+            
+            # Report real API tokens as errors (failing)
+            if [ -n "$API_TOKENS" ]; then
+              echo "⚠️  Warning: Potential real API keys or tokens detected:"
+              echo "$API_TOKENS"
+              echo ""
+              echo "Please ensure these are not real API keys. Use environment variables or placeholder values."
+              EXIT_CODE=1
+            fi
           fi
           
           if [ $EXIT_CODE -eq 0 ]; then
-            echo "✅ No sensitive data patterns detected"
+            if [ $TEST_PATTERNS_FOUND -eq 1 ]; then
+              echo "✅ No real sensitive data detected (test patterns flagged above for awareness)"
+            else
+              echo "✅ No sensitive data patterns detected"
+            fi
           else
             echo ""
             echo "❌ Sensitive data check failed. Please review the warnings above."

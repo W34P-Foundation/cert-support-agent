@@ -100,7 +100,7 @@ npx wrangler deploy
 
 ---
 
-> [!NOTE]
+> 
 > *"In God we trust, all others must bring data."*
 >
 > This agent is architected for the **full observability lifecycle**, prioritizing deterministic routing over stochastic generation.

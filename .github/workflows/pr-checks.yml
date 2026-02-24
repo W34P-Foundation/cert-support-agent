@@ -68,10 +68,9 @@ jobs:
           EXIT_CODE=0
           TEST_PATTERNS_FOUND=0
           
-          BASE_BRANCH="${{ github.base_ref || github.ref_name }}"
+          BASE_BRANCH="${{ github.base_ref }}"
           if [ -z "$BASE_BRANCH" ]; then
-            echo "No base branch detected; skipping sensitive data diff check."
-            exit 0
+            BASE_BRANCH="${{ github.event.repository.default_branch }}"
           fi
           
           if git rev-parse --verify "origin/$BASE_BRANCH" >/dev/null 2>&1; then
@@ -79,8 +78,8 @@ jobs:
           elif git rev-parse --verify "$BASE_BRANCH" >/dev/null 2>&1; then
             DIFF_TARGET="$BASE_BRANCH"
           else
-            echo "Base ref '$BASE_BRANCH' not found; skipping sensitive data diff check."
-            exit 0
+            echo "Base branch '$BASE_BRANCH' not found; cannot run sensitive data diff check. Please ensure the base branch exists in the repository."
+            exit 1
           fi
           
           echo "Using diff target: $DIFF_TARGET"
